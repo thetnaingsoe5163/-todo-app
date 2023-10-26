@@ -1,0 +1,161 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDo App</title>
+    
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/all.min.css">
+</head>
+<body>
+    <div class="navbar bg-dark">
+        <div class="container" style="max-width: 600px;">
+            <a href="#" class="navbar-brand text-white">
+                <i class="fa-solid fa-table-list"></i>
+                Todo
+                <span class="badge bg-danger" id="count">0</span>
+            </a>
+            <button class="btn btn-info" id="clear">Clear</button>
+        </div>
+    </div>
+    <div class="container" style="max-width: 600px;">
+        <h1>Hello</h1>
+        <div class="input-group mb-4">
+            <input type="text" class="form-control" id="item">
+            <button class="btn" id="add"><i class="fa-solid fa-plus"></i></button>
+        </div>
+        <ul id="todo" class="list-group mb-4"></ul>
+        <ul id="done" class="list-group" style="opacity: 0.5;"></ul>
+    </div>
+
+    <script>
+        getData().map(item => createItem(item.text, item.done));
+
+        function getData() {
+            return JSON.parse(localStorage.getItem("data")) || [];
+        }
+
+        function saveData(text) {
+            let data = getData();
+            data.push({text, done : false});
+            localStorage.setItem("data", JSON.stringify(data));
+        }
+
+        function removeData(text) {
+            let data = getData();
+            let result = data.filter(item => item.text != text);
+            localStorage.setItem("data", JSON.stringify(result));
+        }
+
+        function checkData(text) {
+            let data = getData();
+            let result = data.map(item => {
+                if(item.text == text) item.done = true;
+                return item;
+            });
+            localStorage.setItem("data", JSON.stringify(result));
+        }
+
+        function uncheckData(text) {
+            let data = getData();
+            let result = data.map(item => {
+                if(item.text == text) item.done = false;
+                return item;
+            });
+            localStorage.setItem("data", JSON.stringify(result));
+        }
+
+        document.querySelector("#clear").onclick = function() {
+            document.querySelector("#done").textContent = "";
+            let data = getData();
+            let result = data.filter(item => item.done == false);
+            localStorage.setItem("data", JSON.stringify(result));
+            //can't add to done ul after clear
+            // document.querySelector("#done").remove();
+           
+        }
+        function updateCount() {
+            document.querySelector("#count").textContent = 
+            document.querySelectorAll("#todo li").length;
+        }
+        document.querySelector("#add").onclick = function() {
+            let text = document.querySelector("#item").value;
+            if(text == "") {
+                document.querySelector("#item").focus();
+                return;
+            }
+            createItem(text);
+            saveData(text);
+        }
+        document.querySelector("#item").onkeydown = function(e) {
+            if(e.key == "Enter") document.querySelector("#add").onclick();
+        }
+
+        function createItem(text, done) {
+            let li = document.createElement("li");
+            li.classList.add("list-group-item");
+            li.textContent = text;
+
+            let del = document.createElement("a");
+            del.classList.add("fa-solid", "fa-trash", "text-danger", "float-end");
+
+            let check = document.createElement("a");
+            check.classList.add("fa-solid", "fa-check", "float-start", "me-3");
+
+            let undo = document.createElement("a");
+            undo.classList.add("fa-solid", "fa-rotate-left", "float-end", "text-danger")
+
+            li.appendChild(check);
+            li.appendChild(del);
+            
+
+            if(done) {
+               doneItem(li, undo, check);
+            } else {
+                document.querySelector("#todo").appendChild(li);
+            }
+
+            updateCount();
+            document.querySelector("#item").value = "";
+
+            del.onclick = function() {
+                deleteItem(li);
+                updateCount();
+                removeData(text);
+            }
+            // wrong behaviour
+            // del.onclick = deleteItem(li);
+
+            check.onclick = function() {
+                doneItem(li, undo);
+                updateCount();
+                checkData(text);
+            }    
+            
+            
+        }
+        
+        function deleteItem(element) {
+            element.remove();
+        }
+
+        // element 1 => li
+        // element 2 => undo
+        function doneItem(element1, element2) {
+            let li = document.createElement("li");
+            li.classList.add("list-group-item");
+            li.textContent = element1.textContent;
+            li.appendChild(element2);
+            document.querySelector("#done").appendChild(li);
+            element1.remove();
+
+            element2.onclick = function() {
+                document.querySelector("#todo").appendChild(element1);
+                li.remove();
+                updateCount();
+                uncheckData(li.textContent);
+            }
+        }
+    </script>
+</body>
+</html>
